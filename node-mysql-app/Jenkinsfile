@@ -1,0 +1,31 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                script {
+                    docker.build("node-mysql-app:${env.BUILD_ID}")
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                script {
+                    docker.image("node-mysql-app:${env.BUILD_ID}").inside {
+                        sh 'npm test'
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                script {
+                    sh "docker stop node-mysql-app || true"
+                    sh "docker rm node-mysql-app || true"
+                    sh "docker run -d --name node-mysql-app -p 3000:3000 node-mysql-app:${env.BUILD_ID}"
+                }
+            }
+        }
+    }
+}
